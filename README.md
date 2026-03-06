@@ -1,0 +1,2 @@
+# cursor-skills
+Cursor skills

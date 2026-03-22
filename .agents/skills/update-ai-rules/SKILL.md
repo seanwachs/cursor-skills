@@ -7,6 +7,12 @@ description: Analyses an approved PR branch for rule-worthy changes and proposes
 
 Run on an approved PR branch **before merging into main** to identify changes worth capturing as new or updated AI rules across all three providers.
 
+## Prerequisites
+
+Read `project-context/SKILL.md` first — especially the architecture overview and intentional patterns. If the PR introduces a new node type, changes the mapper pattern, adds a new layer to the model hierarchy, or modifies the execution flow, those are strong signals for rule-worthy changes. The architecture context gives you the vocabulary to detect these structural shifts.
+
+Also read `architecture.md` in the repo if it exists — it has deeper detail on the two-layer model design, node categories, and engine runtime that helps you distinguish between "new pattern worth documenting" and "existing pattern being followed."
+
 ---
 
 ## What counts as "rule-worthy"
@@ -15,17 +21,19 @@ Not every code change warrants a rule update. Use this checklist to decide:
 
 | Change type | Rule-worthy? | Example |
 |---|---|---|
-| New architectural pattern introduced | ✅ Yes | New service layer abstraction, new file structure convention |
-| New tech / library added | ✅ Yes | Added Zod for validation, switched from Jest to Vitest |
-| New naming convention established | ✅ Yes | All event handlers now prefixed with `on`, all types suffixed with `Type` |
-| Build/test/lint command changed | ✅ Yes | Changed from `npm test` to `pnpm test:unit` |
-| New coding standard enforced | ✅ Yes | All API handlers must return typed responses |
-| Constraint that AI should never violate | ✅ Yes | Never import from `../shared` in the `api` package |
-| Bug fix that reveals a bad AI habit | ✅ Yes | AI kept suggesting `==` instead of `===`; add rule |
-| New environment variable or config key | ✅ Maybe | Worth noting if it affects how AI suggests code |
-| One-off fix with no broader pattern | ❌ No | Fixed a typo, corrected a variable name |
-| Feature addition with no new conventions | ❌ No | New endpoint that follows existing patterns exactly |
-| Formatting change handled by linter | ❌ No | Already enforced by ESLint/Prettier config |
+| New architectural pattern introduced | Yes | New service layer abstraction, new file structure convention |
+| New tech / library added | Yes | Added Zod for validation, switched from Jest to Vitest |
+| New naming convention established | Yes | All event handlers now prefixed with `on`, all types suffixed with `Type` |
+| Build/test/lint command changed | Yes | Changed from `npm test` to `pnpm test:unit` |
+| New coding standard enforced | Yes | All API handlers must return typed responses |
+| Constraint that AI should never violate | Yes | Never import from `../shared` in the `api` package |
+| Bug fix that reveals a bad AI habit | Yes | AI kept suggesting `==` instead of `===`; add rule |
+| New node type or mapper added | Yes | New node category means new storage model, engine model, and mapper — document the pattern |
+| Change to the storage↔engine boundary | Yes | If the mapper contract changes, AI needs to know |
+| New environment variable or config key | Maybe | Worth noting if it affects how AI suggests code |
+| One-off fix with no broader pattern | No | Fixed a typo, corrected a variable name |
+| Feature addition with no new conventions | No | New endpoint that follows existing patterns exactly |
+| Formatting change handled by linter | No | Already enforced by ESLint/Prettier config |
 
 ---
 
@@ -65,7 +73,7 @@ git log main..HEAD --oneline
 ```
 Use the triple-dot `main...HEAD` diff to see everything this branch adds compared to where it forked from main — the complete PR scope.
 
-### Step 2 — Read existing rules
+### Step 2 — Read existing rules and architecture context
 ```bash
 find .cursor/rules -name "*.mdc" 2>/dev/null
 find .claude/rules -name "*.md" 2>/dev/null
@@ -73,6 +81,11 @@ cat .github/copilot-instructions.md 2>/dev/null
 find .github/instructions -name "*.instructions.md" 2>/dev/null
 ```
 Read the content of all existing rule files. You need to know what's already documented before proposing additions.
+
+Also read `project-context/SKILL.md` and `architecture.md` (if present) to understand the established patterns. This helps you:
+- Recognize when a PR is extending an existing pattern (probably not rule-worthy) vs. establishing a new one (probably rule-worthy)
+- Write rules that reference the correct architectural vocabulary (e.g. "storage model", "engine model", "mapper")
+- Avoid proposing rules that contradict intentional design decisions
 
 ### Step 3 — Identify rule-worthy changes
 Go through the diff and apply the checklist from above. For each rule-worthy change, note:
@@ -85,7 +98,7 @@ Go through the diff and apply the checklist from above. For each rule-worthy cha
 For each rule-worthy change, produce a proposal in this format:
 
 ```
-### 📐 [Rule title]
+### [Rule title]
 
 **Why this is rule-worthy:** [One sentence explaining the pattern/convention from this PR]
 
@@ -96,7 +109,7 @@ For each rule-worthy change, produce a proposal in this format:
 
 **Changes needed:**
 - **Cursor** (`.cursor/rules/NAME.mdc`): [New file / Update existing — show full file content or diff]
-- **Claude Code** (`.claude/rules/NAME.md`): [New file / Update existing — show full file content or diff]  
+- **Claude Code** (`.claude/rules/NAME.md`): [New file / Update existing — show full file content or diff]
 - **Copilot** (`.github/copilot-instructions.md` or `.github/instructions/NAME.instructions.md`): [Append section / New file / Update — show content]
 ```
 
@@ -105,7 +118,7 @@ If a change only warrants updating one provider (e.g. updating Copilot review be
 ### Step 5 — Handle the "nothing to update" case
 If no changes on the branch are rule-worthy, say so clearly:
 ```
-✅ No rule updates needed for this branch.
+No rule updates needed for this branch.
 
 Changes reviewed:
 - [brief list of what was looked at and why it wasn't rule-worthy]
@@ -115,7 +128,7 @@ Do not propose rules just to look thorough. False positives create noise and blo
 ### Step 6 — Ask for approval
 Do NOT write any files. Present all proposals and ask:
 ```
-## 📐 Proposed Rule Updates
+## Proposed Rule Updates
 
 [Proposals here]
 
@@ -133,7 +146,7 @@ Write the approved rule files. For new files, use the correct format for each pr
 
 After writing all files, print a summary:
 ```
-✅ Rules updated:
+Rules updated:
 - `.cursor/rules/NAME.md` — [created / updated]
 - `.claude/rules/NAME.md` — [created / updated]
 - `.github/copilot-instructions.md` — [updated: added section "[heading]"]

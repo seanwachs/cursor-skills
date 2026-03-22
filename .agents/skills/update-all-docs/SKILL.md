@@ -9,6 +9,10 @@ Invoke after a PR is approved and **before merging into main** to review and upd
 
 ---
 
+## Prerequisites
+
+Read `project-context/SKILL.md` if you haven't already — the sub-skills reference it for branch naming and Jira context.
+
 ## What this skill does
 1. Reads the git diff / recently changed files to understand what was changed
 2. Identifies which Confluence documentation pages are affected

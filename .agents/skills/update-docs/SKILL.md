@@ -15,7 +15,7 @@ Covers the "Agents" Confluence space at: https://capacit.atlassian.net/wiki/spac
 
 Below is the full list of documentation pages that may need updating. Match changed code/infra to relevant pages.
 
-### 🏗️ Infrastructure & Setup
+### Infrastructure & Setup
 
 | Page | Confluence ID | URL | Covers |
 |------|--------------|-----|--------|
@@ -27,7 +27,7 @@ Below is the full list of documentation pages that may need updating. Match chan
 | Developer handbook | `791478275` | [link](https://capacit.atlassian.net/wiki/spaces/Agents/pages/791478275) | Development standards, conventions, patterns |
 | Incident, Bug & Security Agreement | `611713026` | [link](https://capacit.atlassian.net/wiki/spaces/Agents/pages/611713026) | SLA and incident handling procedures |
 
-### 🔌 API Documentation
+### API Documentation
 
 **Scope:** API documentation only covers endpoints intended for **external callers** (i.e. systems other than the frontend). Currently the only externally-facing API endpoints are: **workflow export, workflow import, workflow validate, and workflow deployment**. Do NOT update API docs for endpoints that are only called by the frontend.
 
@@ -37,7 +37,7 @@ Below is the full list of documentation pages that may need updating. Match chan
 | Workflow Export & Import | `821592085` | [link](https://capacit.atlassian.net/wiki/spaces/Agents/pages/821592085) | API endpoints for workflow export, import, and validate |
 | Workflow Deployment | `820805643` | [link](https://capacit.atlassian.net/wiki/spaces/Agents/pages/820805643) | API endpoints for workflow deployment |
 
-### 🖥️ Platform UI Documentation
+### Platform UI Documentation
 
 | Page | Confluence ID | URL | Covers |
 |------|--------------|-----|--------|
@@ -66,6 +66,21 @@ Then categorise what was affected:
 - **UI features changed?** → Check Dashboard, Workflow, Schemas, API Settings pages
 - **Dev tooling / local setup changed?** → Check developer setup guide, developer handbook
 
+### Step 1b — Coverage gap check
+
+After categorising the changes, check whether any changed files or areas fall *outside* the scope of all cataloged pages above. If the diff touches areas that no page covers (e.g. a new subsystem, a new integration, or changes to areas not yet documented), flag this explicitly:
+
+```
+## Documentation coverage gaps
+
+The following changes don't map to any existing Confluence page:
+- <file/area> — <what changed and why it might need documentation>
+
+Consider whether a new documentation page should be created for these areas.
+```
+
+This prevents the catalog from silently going stale as the codebase grows. The user can then decide whether to create new pages or update the catalog.
+
 ### Step 2 — Fetch current content of affected pages
 For each affected page, fetch its current content so you can make precise, targeted edits:
 ```
@@ -79,8 +94,8 @@ Use the Atlassian MCP to call getConfluencePage with:
 For each affected page, output a proposal in this format:
 
 ```
-### 📄 [Page Title]
-🔗 [URL]
+### [Page Title]
+[URL]
 
 **Reason this page is affected:** [Brief explanation]
 
@@ -126,8 +141,8 @@ To get the current version number, check the response from `updateConfluencePage
 
 **Example output:**
 ```
-✅ Updated: Workflow overblik
-🔗 Diff: https://capacit.atlassian.net/wiki/pages/diffpagesbyversion.action?pageId=722599957&selectedPageVersions=2&selectedPageVersions=3
+Updated: Workflow overblik
+Diff: https://capacit.atlassian.net/wiki/pages/diffpagesbyversion.action?pageId=722599957&selectedPageVersions=2&selectedPageVersions=3
 ```
 
 Always output diff links for **every** page that was updated.

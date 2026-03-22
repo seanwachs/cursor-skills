@@ -11,29 +11,36 @@ Covers the Release Notes folder at: https://capacit.atlassian.net/wiki/spaces/Ag
 
 ---
 
-## Release notes structure in Confluence
+## Discovering the current release notes
 
+Rather than relying on a hardcoded list, **always discover** the current state of the Release Notes folder dynamically at the start of every run.
+
+Call `getConfluencePageDescendants` on the release notes folder:
 ```
-Release notes (folder, ID: 711819265)
-├── 0.1.0  (ID: 710901794)
-├── 0.1.1  (ID: 717553666)
-├── 0.1.2  (ID: 730824730)
-├── 0.1.3 (patch)  (ID: 736854033)
-├── 0.1.4  (ID: 743014403)
-├── 0.1.5  (ID: 748879891)
-├── 0.1.6  (ID: 770080769)
-├── 0.2.0  (ID: 794755073)
-├── 0.2.2  (ID: 832929793)
-├── 0.2.4  (ID: 863961089)
-├── 0.2.5  (ID: 871202826)   ← most recent published
-└── 0.2.7 (draft)  (ID: 889389079)   ← current draft
+getConfluencePageDescendants:
+  cloudId: "deb5ee5f-2c5f-46bf-a2a4-98575f4404b1"
+  pageId: "711819265"
+  depth: 1
+  limit: 50
 ```
+
+From the results, build a picture of the existing release notes:
+- Each child page has an `id` and `title`.
+- A page whose title contains `(draft)` is the **current draft** — note its `id` and version number.
+- The page with the **highest semver** that does NOT contain `(draft)` is the **most recent published** release note. Use it as the gold-standard reference for format and tone.
+- If no draft page exists, a new page will be created in Step 5.
+
+Store these values for use throughout the remaining steps:
+- `DRAFT_PAGE_ID` — the `id` of the draft page (or `null` if none exists)
+- `DRAFT_VERSION` — the semver extracted from the draft title (e.g. `0.2.9`)
+- `LATEST_PUBLISHED_ID` — the `id` of the most recent published page
+- `LATEST_PUBLISHED_VERSION` — its semver (e.g. `0.2.7`)
 
 ---
 
 ## Canonical release note format
 
-Use this exact structure. Do not deviate from section names or order. See `0.2.5` as the gold standard example.
+Use this exact structure. Do not deviate from section names or order. Use the **most recent published** release note (discovered above) as the gold standard example for format and tone.
 
 ```markdown
 # Release Notes
@@ -74,6 +81,15 @@ _All containers and builds are named according to the release version. Follow th
 
 ## Steps
 
+### Step 0 — Discover current release notes
+Before anything else, run the `getConfluencePageDescendants` call described in "Discovering the current release notes" above. This gives you `DRAFT_PAGE_ID`, `DRAFT_VERSION`, `LATEST_PUBLISHED_ID`, and `LATEST_PUBLISHED_VERSION`.
+
+If a draft page exists, tell the user:
+> "Found existing draft release note: **X.Y.Z (draft)** — I'll update this page."
+
+If no draft exists, tell the user:
+> "No draft release note found. I'll create a new page after you approve."
+
 ### Step 1 — Gather change information
 This skill is designed to run on an approved PR branch **before it is merged into main**. Get a full diff of everything the branch introduces compared to main:
 ```bash
@@ -84,6 +100,20 @@ git log main..HEAD --oneline
 The `main...HEAD` triple-dot syntax diffs the branch tip against the point where it diverged from main — giving a clean, complete picture of the PR's changes regardless of how many commits are on the branch.
 
 Also ask the user: **"What is the target version number for this release?"** if not already known.
+
+### Step 1b — Fetch Jira context for customer-facing language
+
+Extract the ticket number from the branch name (see `project-context/SKILL.md` for the naming convention). Then fetch the Jira issue:
+
+```
+getJiraIssue:
+  cloudId: "deb5ee5f-2c5f-46bf-a2a4-98575f4404b1"
+  issueIdOrKey: "AP-XXX"
+```
+
+The Jira issue summary and description are often written in customer-facing language, which is exactly what release notes need. Use the Jira context to inform your descriptions — the diff tells you *what* changed technically, but the Jira issue tells you *what it means for users*.
+
+If the Atlassian MCP is not available or the branch has no ticket number, fall back to the diff and commit messages.
 
 ### Step 2 — Categorise changes
 Sort all changes into the four buckets:
@@ -105,12 +135,13 @@ Write the full release note in the canonical format above. Use clear, customer-f
 - `NEW` badge on brand new features
 - Short, factual descriptions (not marketing language)
 - Mention if a fix is related to a customer-reported issue
+- Prefer language from the Jira issue when it's clearer than what the diff suggests
 
 ### Step 4 — Present for review
 Show the full draft and ask:
 
 ```
-## 📢 Release Note Draft — v[X.Y.Z]
+## Release Note Draft — v[X.Y.Z]
 
 [Full draft here]
 
@@ -124,7 +155,7 @@ Please review the draft above. You can:
 
 ### Step 5 — Create or update the Confluence page
 
-**If creating a new page:**
+**If `DRAFT_PAGE_ID` is `null` (no existing draft) — create a new page:**
 ```
 createConfluencePage:
   cloudId: "deb5ee5f-2c5f-46bf-a2a4-98575f4404b1"
@@ -135,11 +166,11 @@ createConfluencePage:
   body: <approved release note content>
 ```
 
-**If updating the existing draft page (0.2.7):**
+**If `DRAFT_PAGE_ID` exists — update the existing draft page:**
 ```
 updateConfluencePage:
   cloudId: "deb5ee5f-2c5f-46bf-a2a4-98575f4404b1"
-  pageId: "889389079"
+  pageId: <DRAFT_PAGE_ID>          ← discovered in Step 0
   title: "X.Y.Z (draft)"
   contentFormat: "markdown"
   body: <approved release note content>
@@ -155,10 +186,10 @@ https://capacit.atlassian.net/wiki/pages/diffpagesbyversion.action?pageId=<PAGE_
 
 For a **new page**, the first version is 1 — skip the diff link (there's no previous version to compare against).
 
-For an **updated page** (e.g. the draft page), use the version number from the `updateConfluencePage` response:
+For an **updated page**, use `DRAFT_PAGE_ID` and the version number from the `updateConfluencePage` response:
 ```
-✅ Updated: 0.2.7 (draft)
-🔗 Diff: https://capacit.atlassian.net/wiki/pages/diffpagesbyversion.action?pageId=889389079&selectedPageVersions=<N-1>&selectedPageVersions=<N>
+Updated: X.Y.Z (draft)
+Diff: https://capacit.atlassian.net/wiki/pages/diffpagesbyversion.action?pageId=<DRAFT_PAGE_ID>&selectedPageVersions=<N-1>&selectedPageVersions=<N>
 ```
 
 ---
@@ -167,7 +198,7 @@ For an **updated page** (e.g. the draft page), use the version number from the `
 - Write for **customers and operators**, not internal developers
 - Avoid referencing internal ticket numbers or PR numbers unless asked
 - For infrastructure changes, always mention whether the **IDA on-prem guide** needs to be re-followed
-- Mark anything that requires **manual migration steps** very clearly with a ⚠️ warning
+- Mark anything that requires **manual migration steps** very clearly with a warning
 - "Known Issues" should be honest — don't hide real problems
 - "Features in Pipeline" gives customers a preview of what's coming; keep it high-level
 

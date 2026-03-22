@@ -9,6 +9,10 @@ Checks and reconciles AI rules across Cursor (`.cursor/rules/*.mdc`), Claude Cod
 
 ---
 
+## Prerequisites
+
+Read `project-context/SKILL.md` if you haven't already — it has the project conventions and architecture context that helps you understand which rules are project-specific vs. general.
+
 ## Rule locations and formats
 
 ### Cursor — `.cursor/rules/*.mdc`

@@ -18,6 +18,43 @@ This is the shared context that other skills reference. It captures conventions,
 
 ---
 
+## Jira identities
+
+### Your account
+
+- **Display name:** Sean Wachs
+- **Account ID:** `712020:9de7565e-5ace-455b-8716-439fc430f06c`
+- **Email:** sw@capacit.com
+
+Use this account ID when assigning issues to yourself via `editJiraIssue`:
+```json
+{ "assignee": { "accountId": "712020:9de7565e-5ace-455b-8716-439fc430f06c" } }
+```
+
+### Issue statuses and transitions
+
+The AP project board uses global transitions (available from any status). Use these transition IDs with `transitionJiraIssue`:
+
+| Transition name | Transition ID | Target status | Status ID |
+|---|---|---|---|
+| To Do | `11` | To Do | `10643` |
+| In Progress | `21` | In Progress | `10644` |
+| Ready for review | `2` | Ready for review | `11006` |
+| In review | `3` | In review | `11216` |
+| Done | `31` | Done | `10645` |
+
+Since all transitions are global, you can move an issue between any two statuses directly — no need to discover transitions at runtime.
+
+**Example — move AP-500 to In Progress:**
+```
+transitionJiraIssue:
+  cloudId: "deb5ee5f-2c5f-46bf-a2a4-98575f4404b1"
+  issueIdOrKey: "AP-500"
+  transitionId: "21"
+```
+
+---
+
 ## Branch naming convention
 
 All branches follow this format:
